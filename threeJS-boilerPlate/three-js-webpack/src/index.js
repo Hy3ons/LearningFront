@@ -10,7 +10,7 @@ if (WEBGL.isWebGLAvailable()) {
 
     const camera = new THREE.PerspectiveCamera(85, width / height, 0.1, 1000);
 
-    camera.position.set(0, 1.5, 2);
+    camera.position.set(0, 2, -2.5);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -126,8 +126,12 @@ if (WEBGL.isWebGLAvailable()) {
 
     scene.add(obj3);
 
+    let step = 0;
+
     const render = (time) => {
         time *= 0.001;
+
+        step += 0.04;
 
         obj1.rotation.y = time;
         obj1.rotation.x = time;
@@ -137,6 +141,12 @@ if (WEBGL.isWebGLAvailable()) {
 
         obj3.rotation.z = -time;
         obj3.rotation.x = -time;
+
+        obj3.position.set(
+            1 * Math.cos(step),
+            -1 * Math.sin(step * 2 + 0.5 * Math.PI),
+            -1
+        );
 
         renderer.render(scene, camera);
         requestAnimationFrame(render);
