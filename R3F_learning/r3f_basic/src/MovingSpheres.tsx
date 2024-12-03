@@ -10,27 +10,46 @@ const makeRandomColor = (): string => {
   return `rgb(${r},${g},${b})`;
 };
 
+export const makeHSLRandomColor = (): string => {
+  const h = THREE.MathUtils.randInt(200, 240);
+  const s = THREE.MathUtils.randInt(60, 100);
+  const l = THREE.MathUtils.randInt(20, 100);
+
+  return `hsl(${h},${s}%,${l}%)`;
+};
+
 export default function MovingSpheres() {
   const ballRadius = 0.2;
   const posVectors: THREE.Vector3[] = [];
   const dirVectors: THREE.Vector3[] = [];
+  const ballRadiuses: number[] = [];
   const velocities: number[] = [];
-  const ballCount = 80;
+  const ballCount = 70;
   const boundary = 4;
   const epslion: number = 0.0001;
 
+  const debugMode: boolean = false;
+  const mouseSphereVisualization: boolean = true;
+
+  const pointSphereRadius = 0.8;
+  const collisionAccelation = 1.4;
+
   const minVelocity = 0.01;
-  const maxVelocity = 3;
+  const maxVelocity = 10;
 
   const groupRef = useRef<THREE.Group>(null);
+  const pointerSphereRef = useRef<THREE.Mesh>(null);
 
-  const { viewport } = useThree();
+  const { viewport, scene, pointer, camera } = useThree();
 
   const box = new THREE.Box3();
   const center = new THREE.Vector3();
   const size = new THREE.Vector3(viewport.width, viewport.height, 0);
   const boxBoundaryX = viewport.width / 2;
   const boxBoundaryY = viewport.height / 2;
+
+  //중력가속도의 역할을 하는 백터
+  const gravity = new THREE.Vector3(0, -0.003, 0);
 
   box.setFromCenterAndSize(center, size);
 
@@ -39,6 +58,10 @@ export default function MovingSpheres() {
     const BY = boxBoundaryY - epslion;
     const ballX = THREE.MathUtils.randFloat(-BX, BX);
     const ballY = THREE.MathUtils.randFloat(-BY, BY);
+    const randomRadius = THREE.MathUtils.randFloat(
+      ballRadius,
+      ballRadius + 0.2
+    );
 
     const posVector = new THREE.Vector3(ballX, ballY);
     posVectors.push(posVector);
@@ -51,6 +74,7 @@ export default function MovingSpheres() {
     dirVectors.push(dirVector);
 
     velocities.push(THREE.MathUtils.randFloat(minVelocity, 0.03));
+    ballRadiuses.push(randomRadius);
   }
 
   const accelation: number = 0.001;
@@ -61,12 +85,56 @@ export default function MovingSpheres() {
     const group = groupRef.current;
     if (!group || !group.children.length) return;
 
+    if (pointerSphereRef.current) {
+      const point: THREE.Vector2 = pointer;
+      const unprojectedPoint = new THREE.Vector3(point.x, point.y, 0);
+      unprojectedPoint.unproject(camera);
+
+      unprojectedPoint.z = 0;
+
+      if (pointerSphereRef.current) {
+        pointerSphereRef.current.position.set(
+          unprojectedPoint.x,
+          unprojectedPoint.y,
+          unprojectedPoint.z
+        );
+      }
+
+      const pointSphere: THREE.Mesh = pointerSphereRef.current;
+
+      group.children.forEach((mesh: THREE.Object3D, idx: number) => {
+        const dist = mesh.position.distanceTo(pointSphere.position);
+
+        if (dist + epslion < pointSphereRadius + ballRadiuses[idx]) {
+          const newDirVector = new THREE.Vector3().subVectors(
+            mesh.position,
+            pointSphere.position
+          );
+          newDirVector.normalize();
+
+          dirVectors[idx] = newDirVector;
+
+          const prevPos = mesh.position.clone();
+          const newPos = pointSphere.position
+            .clone()
+            .add(
+              newDirVector
+                .clone()
+                .multiplyScalar(pointSphereRadius + ballRadiuses[idx])
+            );
+
+          const newVelocity = newPos.distanceTo(prevPos) * collisionAccelation;
+          velocities[idx] = Math.max(velocities[idx], newVelocity);
+        }
+      });
+    }
+
     group.children.forEach((mesh: THREE.Object3D, idx: number) => {
       if (curMesh == mesh) return;
 
       const distance = mesh.position.distanceTo(curMesh.position);
 
-      if (distance + epslion < ballRadius * 2) {
+      if (distance + epslion < ballRadiuses[idx] + ballRadiuses[index]) {
         const dir1 = new THREE.Vector3()
           .subVectors(curMesh.position, mesh.position)
           .normalize();
@@ -84,17 +152,36 @@ export default function MovingSpheres() {
           minVelocity
         );
 
+        // 볼이 겹쳤을 때, 절때로 그럴 일이 없게 미세하게 조정하는 부분./
+
+        //curMesh -> mesh 로 가는 백터
+        const dirVec = new THREE.Vector3().subVectors(
+          mesh.position,
+          curMesh.position
+        );
+        dirVec.normalize();
+
+        const sub_vec1 = new THREE.Vector3().addVectors(
+          mesh.position,
+          dirVec.clone().multiplyScalar(-ballRadiuses[idx])
+        );
+
+        const sub_vec2 = new THREE.Vector3().addVectors(
+          curMesh.position,
+          dirVec.clone().multiplyScalar(ballRadiuses[index])
+        );
+
         const middle = new THREE.Vector3()
-          .addVectors(mesh.position, curMesh.position)
+          .addVectors(sub_vec1, sub_vec2)
           .multiplyScalar(0.5);
 
         mesh.position.addVectors(
           middle,
-          dirVectors[idx].clone().multiplyScalar(ballRadius)
+          dirVectors[idx].clone().multiplyScalar(ballRadiuses[idx])
         );
         curMesh.position.addVectors(
           middle,
-          dirVectors[index].clone().multiplyScalar(ballRadius)
+          dirVectors[index].clone().multiplyScalar(ballRadiuses[index])
         );
       }
     });
@@ -109,6 +196,8 @@ export default function MovingSpheres() {
       const y = mesh.position.y;
 
       checkCollision(index, mesh);
+
+      const ballRadius = ballRadiuses[index];
 
       if (Math.abs(x) > boxBoundaryX - ballRadius - epslion) {
         dirVectors[index].x *= -1;
@@ -143,33 +232,44 @@ export default function MovingSpheres() {
         Math.min(boxBoundaryY - ballRadius, mesh.position.y)
       );
 
-      const arrowHelper: THREE.ArrowHelper = mesh
-        .children[0] as THREE.ArrowHelper;
-      arrowHelper.setDirection(dirVectors[index]);
-      arrowHelper.setLength(velocities[index] * 20);
+      dirVectors[index].add(gravity).normalize();
+
+      if (debugMode) {
+        const arrowHelper: THREE.ArrowHelper = mesh
+          .children[0] as THREE.ArrowHelper;
+        arrowHelper.setDirection(dirVectors[index]);
+        arrowHelper.setLength(velocities[index] * 20);
+      }
     });
   });
 
   return (
     <>
       <box3Helper args={[box, "red"]} />
-      <ambientLight args={["0xffffff", 0.8]} />
+      <ambientLight args={[0xffffff, 0.8]} />
 
       <group ref={groupRef}>
         {
           //
           posVectors.length ? (
             posVectors.map((posVector: THREE.Vector3, index: number) => {
-              const color = makeRandomColor();
+              const color = makeHSLRandomColor();
 
               return (
                 <mesh position={posVector} key={"mesh_" + index}>
-                  <sphereGeometry args={[ballRadius]} />
-                  <meshBasicMaterial color={color} />
+                  <sphereGeometry args={[ballRadiuses[index]]} />
+                  <meshBasicMaterial color={debugMode ? "red" : color} />
 
-                  <arrowHelper
-                    args={[dirVectors[index], undefined, 1, "blue"]}
-                  />
+                  {
+                    //
+                    debugMode ? (
+                      <arrowHelper
+                        args={[dirVectors[index], undefined, 1, "blue"]}
+                      />
+                    ) : (
+                      <></>
+                    )
+                  }
                 </mesh>
               );
             })
@@ -178,6 +278,15 @@ export default function MovingSpheres() {
           )
         }
       </group>
+
+      <mesh ref={pointerSphereRef}>
+        <sphereGeometry args={[pointSphereRadius]} />
+        <meshBasicMaterial
+          color={"hotpink"}
+          transparent
+          opacity={mouseSphereVisualization ? 1 : 0}
+        />
+      </mesh>
 
       {/* many lack */}
 

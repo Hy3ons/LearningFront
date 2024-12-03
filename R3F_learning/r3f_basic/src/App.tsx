@@ -1,26 +1,31 @@
 import "./App.css";
 import { Canvas } from "@react-three/fiber";
-import BearToHoney from "./BearToHoney";
 import { CameraControls } from "@react-three/drei";
-import { ThreeElement } from "./ThreeElement";
-import MovingSphere from "./MovingSphere";
 import * as THREE from "three";
 import MovingSpheres from "./MovingSpheres";
+
+const isDebug: boolean = false;
 
 function App() {
   return (
     <>
       <Canvas orthographic camera={{ zoom: 60, position: [0, 0, 100] }}>
-        {/* <ThreeElement /> */}
-        {/* <BearToHoney /> */}
-        {/* <MovingSphere /> */}
         <MovingSpheres />
-        <CameraControls />
 
-        {/* <gridHelper
-          args={[15, 15]}
-          rotation={[THREE.MathUtils.degToRad(90), 0, 0]}
-        /> */}
+        {/* <color attach={"background"} args={["gray"]} /> */}
+        {/* <CameraControls /> */}
+
+        {
+          //
+          isDebug ? (
+            <gridHelper
+              args={[50, 50]}
+              rotation={[THREE.MathUtils.degToRad(90), 0, 0]}
+            />
+          ) : (
+            <></>
+          )
+        }
       </Canvas>
     </>
   );
