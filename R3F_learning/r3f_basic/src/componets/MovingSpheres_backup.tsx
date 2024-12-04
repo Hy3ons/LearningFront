@@ -287,26 +287,6 @@ export default function MovingSpheres() {
           opacity={mouseSphereVisualization ? 1 : 0}
         />
       </mesh>
-
-      {/* many lack */}
-
-      {/* <group>
-        {
-          //
-          posVectors.length ? (
-            posVectors.map((posVector: THREE.Vector3, index: number) => {
-              return (
-                <pointLight
-                  position={posVector}
-                  args={[makeRandomColor(), 0.8]}
-                />
-              );
-            })
-          ) : (
-            <></>
-          )
-        }
-      </group> */}
     </>
   );
 }

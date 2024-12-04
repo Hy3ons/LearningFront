@@ -32,7 +32,7 @@ export default function BearToHoney() {
 
   bearToHoney.divideScalar(desireFrame);
 
-  useFrame((state, delta) => {
+  useFrame(() => {
     const bearObj = bearRef.current;
 
     if (bearObj) {

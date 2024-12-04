@@ -1,19 +1,20 @@
-import "./App.css";
+import "./css/App.css";
 import { Canvas } from "@react-three/fiber";
-import { CameraControls } from "@react-three/drei";
 import * as THREE from "three";
-import MovingSpheres from "./MovingSpheres";
+
+import { CameraControls } from "@react-three/drei";
+import Curv from "./componets/Curv";
+import Balls from "./componets/Balls";
 
 const isDebug: boolean = false;
 
 function App() {
   return (
     <>
-      <Canvas orthographic camera={{ zoom: 60, position: [0, 0, 100] }}>
-        <MovingSpheres />
-
-        {/* <color attach={"background"} args={["gray"]} /> */}
+      <Canvas orthographic camera={{ zoom: 30, position: [0, 0, 100] }}>
+        <color attach={"background"} args={["black"]} />
         {/* <CameraControls /> */}
+        <Balls />
 
         {
           //
