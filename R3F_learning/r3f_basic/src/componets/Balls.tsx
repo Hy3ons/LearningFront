@@ -16,7 +16,7 @@ import {
 } from "../common/constants/BallsConstants";
 import Ball from "./Ball";
 import { IBallProps } from "../common/interfaces/IBallProps";
-import { makeHSLRandomColor } from "./MovingSpheres_backup";
+import { makeHSLRandomColor } from "../common/utils/RandomColor";
 
 export default function Balls() {
   const ballPropses: IBallProps[] = [];
