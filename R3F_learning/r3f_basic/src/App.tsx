@@ -23,6 +23,7 @@ function App() {
   const [crntStep] = useRecoilState<StepState>(atomCrntStep);
   const camConRef = useRef<CameraControlsType>(null);
   const [scrollY, setScrollYDelta] = useState<number>(0);
+  const [dummy, dummySet] = useState<number>(0);
 
   function camConStart() {
     if (camConRef.current) {
@@ -33,6 +34,9 @@ function App() {
 
   function wheelControl(e: React.WheelEvent<HTMLDivElement>) {
     setScrollYDelta(e.deltaY);
+    dummySet(dummy + 1);
+
+    console.log(dummy);
     camConStart();
   }
 
@@ -52,7 +56,7 @@ function App() {
     <div className="full-wrapper" onContextMenu={(e) => e.preventDefault()}>
       <ResponsiveAppBar />
       <SecondText onWheel={wheelControl} />
-      <Dom scrollYDelta={scrollY} />
+      <Dom scrollYDelta={scrollY} dum={dummy} />
       <Canvas
         orthographic
         camera={{ zoom: CAM_LIMIT, position: [0, 0, 100] }}

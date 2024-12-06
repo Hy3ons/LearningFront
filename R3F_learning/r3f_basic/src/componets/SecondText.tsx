@@ -6,7 +6,7 @@ export default function SecondText(props: ISecondText) {
   return (
     <div
       className="second-text-div"
-      onWheel={(e) => {
+      onWheel={(e: React.WheelEvent<HTMLDivElement>) => {
         //
         props.onWheel(e);
       }}

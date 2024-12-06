@@ -27,7 +27,7 @@ export default function Dom(props: IDomProps) {
       sectionWrapRef.current.scrollTop += scrollY;
       setScroll(sectionWrapRef.current.scrollTop);
     }
-  }, [scrollY]);
+  }, [props.dum]);
 
   useLayoutEffect(() => {
     gsap.timeline({
