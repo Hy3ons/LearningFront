@@ -19,10 +19,12 @@ export const origin = new THREE.Vector3();
 export const pointerCollisionRatio: number = 1.6;
 
 export const minVelocity = 0.01;
-export const maxVelocity = 3;
+export const maxVelocity = 0.3;
 
-export const gravity = new THREE.Vector3(0, -0.003, 0);
+export const gravity = new THREE.Vector3(0, -0.03, 0);
 export const boundary = 4;
 
 export const debugMode: boolean = false;
 export const mouseSphereVisualization: boolean = true;
+
+export const isBoxLine: boolean = false;

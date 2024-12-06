@@ -1,12 +1,15 @@
 import * as THREE from "three";
 
 import { Text, Billboard } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
+import { getScroll } from "../../common/utils/scrollData";
 
 export default function Curv() {
   const textString = "Welcome to Solving Problem World";
   const points: THREE.Vector3[] = [];
+
+  const { size } = useThree();
 
   const xDivision = 12;
   const amplitude = 8;
@@ -19,7 +22,7 @@ export default function Curv() {
     const sin = Math.sin(THREE.MathUtils.degToRad(i)) * amplitude;
     const cos = Math.cos(THREE.MathUtils.degToRad(i)) * amplitude;
 
-    const pos = new THREE.Vector3(x, sin, cos);
+    const pos = new THREE.Vector3(x - xLength, sin, cos);
     points.push(pos);
   }
 
@@ -66,18 +69,47 @@ export default function Curv() {
 
   return (
     <>
-      <group ref={curveGroupRef} position={[-xLength, 0, 0]}>
+      <group ref={curveGroupRef} position={[0, 0, 0]}>
         {
           //
           curves.length ? (
             curves.map((curve: THREE.Vector3[], index: number) => {
+              const localScale = THREE.MathUtils.mapLinear(
+                getScroll(),
+                0,
+                size.height,
+                0.7,
+                6
+              );
+
+              const groupScaleVector = new THREE.Vector3(
+                localScale,
+                localScale,
+                localScale
+              );
+
               return (
-                <group rotation={[(Math.PI * 2 * index) / curveCount, 0, 0]}>
+                <group
+                  rotation={[(Math.PI * 2 * index) / curveCount, 0, 0]}
+                  key={`group_${index}`}
+                  scale={groupScaleVector}
+                >
                   {curve.length ? (
                     curve.map((pos: THREE.Vector3, idx: number) => {
+                      const ops = THREE.MathUtils.mapLinear(
+                        getScroll(),
+                        400,
+                        0,
+                        0,
+                        1
+                      );
+
                       return (
-                        <Billboard position={pos}>
-                          <Text color={"white"}>{textString[idx]}</Text>
+                        <Billboard position={pos} key={`text_${idx}`}>
+                          <Text color={"black"} fontWeight={"bold"}>
+                            {textString[idx]}
+                            <meshBasicMaterial transparent opacity={ops} />
+                          </Text>
                         </Billboard>
                       );
                     })

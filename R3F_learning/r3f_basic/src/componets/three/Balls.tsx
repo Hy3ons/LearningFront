@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 import {
   pointerSphereRadius,
@@ -13,10 +13,11 @@ import {
   boundary,
   debugMode,
   mouseSphereVisualization,
-} from "../common/constants/BallsConstants";
+  isBoxLine,
+} from "../../common/constants/BallsConstants";
 import Ball from "./Ball";
-import { IBallProps } from "../common/interfaces/IBallProps";
-import { makeHSLRandomColor } from "../common/utils/RandomColor";
+import { IBallProps } from "../../common/interfaces/IBallProps";
+import { makeHSLRandomColor } from "../../common/utils/RandomColor";
 
 export default function Balls() {
   const ballPropses: IBallProps[] = [];
@@ -29,12 +30,11 @@ export default function Balls() {
   const box = new THREE.Box3();
   const center = new THREE.Vector3();
   const size = new THREE.Vector3(viewport.width, viewport.height, 0);
-  const boxBoundaryX = viewport.width / 2;
-  const boxBoundaryY = viewport.height / 2;
-
-  //중력가속도의 역할을 하는 백터
 
   box.setFromCenterAndSize(center, size);
+
+  const boxBoundaryX = viewport.width / 2;
+  const boxBoundaryY = viewport.height / 2;
 
   for (let i = 0; i < BALL_AMOUNT; i++) {
     const BX = boxBoundaryX - epslion;
@@ -71,6 +71,8 @@ export default function Balls() {
     ballPropses.push(element);
   }
 
+  const [balls] = useState<IBallProps[]>(ballPropses);
+
   const pointerSphereUpdate = () => {
     if (!pointerSphereRef.current) return;
     const point: THREE.Vector2 = pointer;
@@ -93,13 +95,13 @@ export default function Balls() {
     const group = groupRef.current;
     if (!group || !group.children.length) return;
 
-    const radius1 = ballPropses[index].ballOptions.radius;
+    const radius1 = balls[index].ballOptions.radius;
 
     group.children.forEach((mesh: THREE.Object3D, idx: number) => {
       if (curMesh == mesh) return;
 
       const distance = mesh.position.distanceTo(curMesh.position);
-      const radius2 = ballPropses[idx].ballOptions.radius;
+      const radius2 = balls[idx].ballOptions.radius;
 
       if (distance + epslion < radius1 + radius2) {
         const dir1 = new THREE.Vector3()
@@ -107,16 +109,16 @@ export default function Balls() {
           .normalize();
         const dir2 = dir1.clone().multiplyScalar(-1);
 
-        ballPropses[index].ballOptions.dirVector.addVectors(origin, dir1);
-        ballPropses[idx].ballOptions.dirVector.addVectors(origin, dir2);
+        balls[index].ballOptions.dirVector.addVectors(origin, dir1);
+        balls[idx].ballOptions.dirVector.addVectors(origin, dir2);
 
-        ballPropses[index].ballOptions.velocity = Math.max(
-          ballPropses[index].ballOptions.velocity * collisionRatio,
+        balls[index].ballOptions.velocity = Math.max(
+          balls[index].ballOptions.velocity * collisionRatio,
           minVelocity
         );
 
-        ballPropses[idx].ballOptions.velocity = Math.max(
-          ballPropses[idx].ballOptions.velocity * collisionRatio,
+        balls[idx].ballOptions.velocity = Math.max(
+          balls[idx].ballOptions.velocity * collisionRatio,
           minVelocity
         );
 
@@ -144,13 +146,11 @@ export default function Balls() {
 
         mesh.position.addVectors(
           middle,
-          ballPropses[idx].ballOptions.dirVector.clone().multiplyScalar(radius2)
+          balls[idx].ballOptions.dirVector.clone().multiplyScalar(radius2)
         );
         curMesh.position.addVectors(
           middle,
-          ballPropses[index].ballOptions.dirVector
-            .clone()
-            .multiplyScalar(radius1)
+          balls[index].ballOptions.dirVector.clone().multiplyScalar(radius1)
         );
       }
     });
@@ -169,21 +169,24 @@ export default function Balls() {
 
   return (
     <>
-      <box3Helper args={[box, "red"]} />
+      {
+        //
+        isBoxLine ? <box3Helper args={[box, "red"]} /> : <></>
+      }
+
       <ambientLight args={[0xffffff, 0.8]} />
 
       <group ref={groupRef}>
         {
           //
-          ballPropses.length ? (
-            ballPropses.map((props: IBallProps) => {
+          balls.length ? (
+            balls.map((props: IBallProps) => {
               return (
-                <>
-                  <Ball
-                    envOptions={props.envOptions}
-                    ballOptions={props.ballOptions}
-                  />
-                </>
+                <Ball
+                  envOptions={props.envOptions}
+                  ballOptions={props.ballOptions}
+                  key={`ball_${props.ballOptions.ballIdx}`}
+                />
               );
             })
           ) : (
